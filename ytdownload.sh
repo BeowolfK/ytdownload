@@ -48,10 +48,12 @@ extract_data(){
 
 case "$1" in
     "-h"|"--help")
-        echo "help"
-        return 0
+        printf "Usage: ytdownload <[-G|--gui]|[-T|--tui]|[<youtube_url>]>\n"
+        printf "\t-G|--gui : Ouvre le mode graphique dans une session graphique\n"
+        printf "\t-T|--tui : Ouvre le mode graphique dans le terminal\n"
+        printf "\t<youtube_url> : Utiliser le mode CLI en passant directement l'URL à télécharger\n"
         ;;
-    "-tui")
+    "-T"|"--tui")
         url="$(dialog --title "URL de la vidéo YouTube" --inputbox "URL de la vidéo YouTube a télécharger : " 0 0 2>&1 >/dev/tty)"
         verify $url
         extract_data $url
@@ -89,7 +91,7 @@ case "$1" in
         clear
         ;;
 
-    "-gui")
+    "-G"|"--gui")
         url="$(zenity --entry --height=500 --width=800 --text="URL de la vidéo YouTube à télécharger")"
         verify $url
         extract_data $url
