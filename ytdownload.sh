@@ -49,16 +49,16 @@ case "$1" in
         res=$(dialog --title "Choix du flux video" --clear --menu "$header" 0 0 0 "${video_dialog[@]}" 2>&1 >/dev/tty)
         tmpdir=$(mktemp -d)
         {
-            echo 0
+            printf "%d\n" 0
             yt-dlp -f "$res" -o "$tmpdir/video.%(ext)s" "$url" 1> /dev/null
-            echo 25
+            printf "%d\n" 25
             yt-dlp -f "$codec" -o "$tmpdir/audio.%(ext)s" "$url" 1> /dev/null
-            echo 50
+            printf "%d\n" 50
             ffmpeg -y -i $tmpdir/video.* -i $tmpdir/audio.* "$title.mp4" &> /dev/null
-            echo 75
+            printf "%d\n" 75
             rm -rf $tmpdir
-            echo 100
-        } | dialog --gauge "Téléchargement de la vidéo YouTube" 10 50 0
+            printf "%d\n" 100
+        } | dialog --title "Téléchargement de la vidéo YouTube" --gauge "Le téléchargement du flux vidéo et audio est en cours.\nLe muxing est effectué une fois ce deux flux téléchargés.\nLes fichiers temporaires seront ensuite supprimés" 0 0 
         clear
         ;;
 
