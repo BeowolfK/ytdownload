@@ -2,11 +2,11 @@
 
 set -euo pipefail
 
-    download() {
+download() {
     tmpdir=$(mktemp -d)
     yt-dlp -f "$res" -o "$tmpdir/video.%(ext)s" "$url" 1> /dev/null
     yt-dlp -f "$codec" -o "$tmpdir/audio.%(ext)s" "$url" 1> /dev/null
-    ffmpeg -y -i $tmpdir/video.* -i $tmpdir/audio.* "$title.mp4" 1> /dev/null
+    ffmpeg -y -i $tmpdir/video.* -i $tmpdir/audio.* "$title.mp4" &> /dev/null
     rm -rf $tmpdir
 }
 
@@ -36,12 +36,36 @@ case "$1" in
             # echo "Ligne : $other"
             audio_dialog+=("$id" "$other") 
         done <<< "$audio"
-        choice1=$(dialog --title "Choix du flux audio" --clear --menu "$header" 40 50 30 "${audio_dialog[@]}" 2>&1 >/dev/tty)
-        echo $choice1
+        codec=$(dialog --title "Choix du flux audio" --clear --menu "$header" 0 0 0 "${audio_dialog[@]}" 2>&1 >/dev/tty)
+
+        video_dialog=()
+        while IFS= read -r line; do
+            id=$(printf "%s" "$line" | grep -o '^[0-9]\+')
+            # echo "ID : $id"
+            other=$(printf "%s" "$line" | grep -o ' .*')
+            # echo "Ligne : $other"
+            video_dialog+=("$id" "$other") 
+        done <<< "$video"
+        res=$(dialog --title "Choix du flux video" --clear --menu "$header" 0 0 0 "${video_dialog[@]}" 2>&1 >/dev/tty)
+        tmpdir=$(mktemp -d)
+        {
+            echo 0
+            yt-dlp -f "$res" -o "$tmpdir/video.%(ext)s" "$url" 1> /dev/null
+            echo 25
+            yt-dlp -f "$codec" -o "$tmpdir/audio.%(ext)s" "$url" 1> /dev/null
+            echo 50
+            ffmpeg -y -i $tmpdir/video.* -i $tmpdir/audio.* "$title.mp4" &> /dev/null
+            echo 75
+            rm -rf $tmpdir
+            echo 100
+        } | dialog --gauge "Téléchargement de la vidéo YouTube" 10 50 0
+        clear
         ;;
+
     "-gui")
         echo "gui"
         ;;
+
     *)
         url=$1
         if ! echo "$url" | grep -q -E '^(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/.*$';
@@ -54,12 +78,10 @@ case "$1" in
 
         printf "%s\n%s\n" "$header" "$audio"
         read -p "Quel CODEC audio ? (ID) " codec
-
         printf "%s\n%s\n" "$header" "$video"
         read -p "Quel resolution video ? (ID) " res
 
         download
-
         ;;
 esac
 
